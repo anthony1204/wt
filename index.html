@@ -181,8 +181,6 @@ const { unixNow, localeTimeString, year, month, day, week } = getUnixTime();
 addLog("Time is set to: " + localeTimeString + " : dd" + intToHex(unixNow, 4));
 await rxTxSendCommand(hexToBytes('dd' +
 [intToHex(unixNow, 4), intToHex(year, 2), intToHex(month, 1), intToHex(day, 1), intToHex(week, 1)].join('')));
-
-await rxTxSendCommand(hexToBytes('e2'))
 }
 
 async function triggerRxTxCmd(cmd) {
@@ -522,6 +520,7 @@ is_allow_drawing = false;
 <br>
 <button type="button" onclick="triggerRxTxCmd('90')" title="Click the button and upload the image. The image will be permanently displayed on the screen">Set to image mode</button>
 <button type="button" onclick="triggerRxTxCmd('91')" title="Click the button to switch to clock mode">Set to clock mode</button>
+<button type="button" onclick="triggerRxTxCmd('e3')" title="Show the home screen (Bluetooth name + 'Tap NFC to program')">Home screen</button>
 <button type="button" onclick="clearScreen('00')">Clear screen to black</button>
 <button type="button" onclick="clearScreen('ff')">Clear the screen to white</button>
 <button type="button" onclick="triggerEpdCmd('0101')">Refresh screen (full screen update in picture mode)</button>
