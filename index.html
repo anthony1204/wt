@@ -4,21 +4,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hanshow controller 3000</title>
 <style>
-#tool-box>* {
-margin-right: 5px;
-}
 * {
 padding: 0;
 margin: 0;
+box-sizing: border-box;
+}
+#tool-box>* {
+margin-right: 5px;
 }
 button,a {
-padding: 2px;
+padding: 6px 10px;
 margin: 2px;
 display: inline-block;
+cursor: pointer;
 }
 body {
 padding: 20px;
-overflow-y: hidden;
 }
 #canvas-box,
 #tool-box {
@@ -31,6 +32,46 @@ height: auto;
 #tab_image textarea {
 width: 100%;
 box-sizing: border-box;
+}
+#nav-links {
+margin-top: 8px;
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+gap: 8px;
+}
+#tag-id {
+color: #0a7;
+font-weight: bold;
+word-break: break-all;
+}
+#nfc-hint {
+margin: 10px 0;
+padding: 8px 10px;
+background: #fff7d6;
+border: 1px solid #e6d27a;
+border-radius: 6px;
+}
+@media (max-width: 760px) {
+body {
+padding: 12px;
+}
+button,a {
+padding: 9px 12px;
+}
+#log-box {
+position: static !important;
+width: 100% !important;
+height: auto !important;
+margin-top: 16px;
+}
+#log {
+height: 160px !important;
+padding: 10px !important;
+}
+#edit-font {
+max-width: 90vw !important;
+}
 }
 </style>
 <script type="application/javascript" src="js/dithering.js"></script>
@@ -79,7 +120,18 @@ reconnectTrys = 0;
 
 async function sendCommand(cmd) {
 if (epdCharacteristic) {
+// Writes are positional and idempotent, so retrying a transient failure is safe
+// and avoids a dropped block leaving a black strip when the link hiccups.
+for (let attempt = 0; attempt < 3; attempt++) {
+try {
 await epdCharacteristic.writeValueWithResponse(cmd)
+return
+} catch (e) {
+addLog(`> Send failed (${e}), retry ${attempt + 1}/3`)
+await delay(50)
+}
+}
+addLog('> Send failed after 3 attempts')
 } else {
 addLog('Service is not available. Is the Bluetooth link up?')
 }
@@ -303,12 +355,14 @@ if (image_file.files.length > 0) {
 const file = image_file.files[0];
 
 const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
 const image = new Image();
 image.src = URL.createObjectURL(file);
 image.onload = function(event) {
 URL.revokeObjectURL(this.src);
+ctx.fillStyle = 'white';
+ctx.fillRect(0, 0, canvas.width, canvas.height);
 ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, canvas.width, canvas.height);
 convert_dithering()
 }
@@ -326,7 +380,7 @@ y: y - rect.top * (canvas.height/rect.height)
 function clear_canvas() {
 if(confirm('Confirm to clear screen?')) {
 const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext("2d");
+const ctx = canvas.getContext("2d", { willReadFrequently: true });
 ctx.fillStyle = 'white';
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
@@ -334,7 +388,7 @@ ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 function convert_dithering() {
 const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext("2d");
+const ctx = canvas.getContext("2d", { willReadFrequently: true });
 const mode = document.getElementById('dithering').value;
 if (mode.startsWith('bwr')) {
 ditheringCanvasByPalette(canvas, bwrPalette, mode);
@@ -344,13 +398,21 @@ dithering(ctx, canvas.width, canvas.height, parseInt(document.getElementById('th
 }
 
 document.body.onload = () => {
+// Carry the tag id (from the QR's ?id=) through to the other tools and show it.
+const tagId = new URLSearchParams(location.search).get('id') || '';
+if (tagId) {
+document.getElementById('tag-id').textContent = 'id: ' + tagId;
+document.getElementById('link-ota').href = 'ATC_TLSR_PaperBLEcontrol.html?id=' + encodeURIComponent(tagId);
+document.getElementById('link-uart').href = 'uart_flasher.html?id=' + encodeURIComponent(tagId);
+}
+
 setInterval(() => {
 const { localeTimeString, year, month, day, week } = getUnixTime();
 document.getElementById('time-setter').innerText = `Set the time to: ${year}-${month}-${day} ${localeTimeString} week${week}`;
 }, 1000);
 
 const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext("2d");
+const ctx = canvas.getContext("2d", { willReadFrequently: true });
 ctx.fillStyle = 'white';
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -507,8 +569,13 @@ is_allow_drawing = false;
 }
 }
 </script>
-<h2>Electronic price tag Bluetooth controller<a style="margin-left: 130px;" href="uart_flasher.html">Serial port upgrade</a><a href="ATC_TLSR_PaperBLEcontrol.html">Bluetooth OTA upgrade</a>
-</h2>
+<h2>Electronic price tag Bluetooth controller</h2>
+<div id="nav-links">
+<a id="link-uart" href="uart_flasher.html">Serial port upgrade</a>
+<a id="link-ota" href="ATC_TLSR_PaperBLEcontrol.html">Bluetooth OTA upgrade</a>
+<span id="tag-id"></span>
+</div>
+<p id="nfc-hint">Tap an NFC reader to the tag to activate Bluetooth.</p>
 
 
 <button id="connectbutton" type="button" onclick="preConnect();">Link</button>

@@ -80,7 +80,7 @@ function dithering(ctx, width, height, threshold, type) {
 }
 
 function canvas2bytes(canvas, type='bw') {
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
   const arr = [];
@@ -89,10 +89,14 @@ function canvas2bytes(canvas, type='bw') {
   for (let x = canvas.width - 1; x >= 0; x--) {
     for (let y = 0; y < canvas.height; y++) {
       const index = (canvas.width * 4 * y) + x * 4;
+      // Any unpainted/transparent pixel reads as (0,0,0,0). Without this it would
+      // be encoded as black, which shows up as a black strip wherever the canvas
+      // was not fully painted (observed on mobile). Treat it as white paper.
+      const opaque = imageData.data[index + 3] > 0;
       if (type !== 'bwr') {
-        buffer.push(imageData.data[index] > 0 && imageData.data[index+1] > 0 && imageData.data[index+2] > 0 ? 1 : 0);
+        buffer.push(!opaque || (imageData.data[index] > 0 && imageData.data[index+1] > 0 && imageData.data[index+2] > 0) ? 1 : 0);
       } else {
-        buffer.push(imageData.data[index] > 0 && imageData.data[index+1] === 0 && imageData.data[index+2] === 0 ? 1 : 0);
+        buffer.push(opaque && imageData.data[index] > 0 && imageData.data[index+1] === 0 && imageData.data[index+2] === 0 ? 1 : 0);
       }
 
       if (buffer.length === 8) {

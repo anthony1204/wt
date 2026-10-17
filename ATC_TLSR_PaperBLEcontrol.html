@@ -1,6 +1,15 @@
 
 <!-- saved from url=(0057)https://atc1441.github.io/ATC_TLSR_Paper_OTA_writing.html -->
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>ATC_TLSR_Paper BLE control</title>
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>ATC_TLSR_Paper BLE control</title>
+<style>
+body { padding: 12px; font-family: sans-serif; line-height: 1.4; }
+button, a { padding: 9px 12px; margin: 2px; cursor: pointer; }
+input[type=file], input[type=number], input[type=text], select { padding: 4px; max-width: 100%; }
+textarea { width: 100%; box-sizing: border-box; }
+#tag-id { color: #0a7; font-weight: bold; word-break: break-all; }
+#nfc-hint { margin: 10px 0; padding: 8px 10px; background: #fff7d6; border: 1px solid #e6d27a; border-radius: 6px; }
+#log { width: 100%; box-sizing: border-box; height: 160px; overflow: auto; border: solid 1px #999; padding: 8px; }
+</style>
 </head>
 
 <body>
@@ -238,7 +247,8 @@
       }
       else {
         connectTrys = 0;
-        navigator.bluetooth.requestDevice({ optionalServices: ['0000221f-0000-1000-8000-00805f9b34fb', '00001f10-0000-1000-8000-00805f9b34fb', '13187b10-eba9-a3ba-044e-83d3217d9a38'], filters: [{ namePrefix: 'ESL_' }] }).then(device => {
+        const tagId = new URLSearchParams(location.search).get('id');
+        navigator.bluetooth.requestDevice({ optionalServices: ['0000221f-0000-1000-8000-00805f9b34fb', '00001f10-0000-1000-8000-00805f9b34fb', '13187b10-eba9-a3ba-044e-83d3217d9a38'], filters: [{ namePrefix: tagId || 'ESL_' }] }).then(device => {
           device.addEventListener('gattserverdisconnected', disconnect);
           bleDevice = device;
           connect();
@@ -366,6 +376,8 @@
     }
 
     window.onload = function () {
+      const tagId = new URLSearchParams(location.search).get('id');
+      document.getElementById('tag-id').textContent = tagId || 'ESL_ (any)';
       document.querySelector("#file").addEventListener("change", function () {
         var reader = new FileReader();
         reader.onload = function () {
@@ -395,6 +407,8 @@
   Welcome to ATCnetz.de ATC_TLSR_Paper BLE control,<br>Click connect and select the TLSR E-Paper display you want to
   talk to.<br><br>
   The ATC_TLSR_Paper Firmware can be found here: <a href="https://github.com/atc1441/ATC_TLSR_Paper" target="_blank">https://github.com/atc1441/ATC_TLSR_Paper</a><br><br>
+  <p id="nfc-hint">Tap an NFC reader to the tag to activate Bluetooth.</p>
+  <div>Tag: <span id="tag-id"></span></div><br>
   <button id="connectbutton" type="button" onclick="preConnect();">Connect</button>
   <button id="connectbutton" type="button" onclick="reConnect();">Reconnect</button>
   <button id="connectbutton" type="button" onclick="document.getElementById(&#39;log&#39;).innerHTML = &#39;&#39;;">Clear Log</button>
