@@ -195,13 +195,32 @@ const canvas = document.getElementById('canvas');
 
 const startTime = new Date().getTime();
 
+// Diagnostic: count dark pixels in the rightmost ~1cm (52 px) of the canvas we
+// are about to upload. If it reports ~all dark, the canvas/readback is the
+// problem; if ~0 dark, the image data is fine and the loss happens in transfer.
+{
+const probeCtx = canvas.getContext("2d", { willReadFrequently: true });
+const probe = probeCtx.getImageData(Math.max(0, canvas.width - 52), 0, Math.min(52, canvas.width), canvas.height).data;
+let dark = 0;
+for (let i = 0; i < probe.length; i += 4) if (probe[i + 3] > 0 && probe[i] < 128) dark++;
+addLog(`> right 52px: ${dark} dark / ${Math.min(52, canvas.width) * canvas.height} px (canvas ${canvas.width}x${canvas.height}, dpr ${window.devicePixelRatio})`);
+}
 
 await sendCommand(hexToBytes("0000"));
 
+// The clear also renegotiates the connection interval on the tag. Streaming
+// into that window loses the first blocks of the frame, which shows up as a
+// black strip (usually on the right, where the frame data starts).
+await delay(300);
+
 await sendCommand(hexToBytes("020000"));
 
+// Replay the whole frame twice: some phones still drop the first block or two
+// while the link settles, so the second pass repairs them.
+for (let pass = 0; pass < 2; pass++) {
 await sendBufferData(bytesToHex(canvas2bytes(canvas)), 'bw')
 await sendBufferData(bytesToHex(canvas2bytes(canvas, 'bwr')), 'bwr')
+}
 
 await sendCommand(hexToBytes("0101"))
 
