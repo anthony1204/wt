@@ -180,11 +180,16 @@ let code = 'ff';
 if (type === 'bwr') {
 code = '00';
 }
-const step = 480;
+// Small blocks: the tag ACKs at the link layer but drops packets that do not
+// fit its small BLE RX FIFO when the link is marginal (tag away from phone),
+// and those are never retransmitted. Smaller writes need fewer FIFO buffers
+// each, and a short pause lets the tag drain between blocks.
+const step = 240;
 let partIndex = 0;
 for (let i = 0; i < value.length; i += step) {
 addLog(`Sending block ${partIndex+1}. Block size: ${step/2 + 4}byte. Starting position: ${i/2}`);
 await sendCommand(hexToBytes("03" + code + intToHex(i / 2, 2) + value.substring(i, i + step)));
+await delay(8);
 partIndex += 1;
 }
 }
