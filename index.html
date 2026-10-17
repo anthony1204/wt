@@ -184,12 +184,12 @@ code = '00';
 // fit its small BLE RX FIFO when the link is marginal (tag away from phone),
 // and those are never retransmitted. Smaller writes need fewer FIFO buffers
 // each, and a short pause lets the tag drain between blocks.
-const step = 240;
+const step = 360;
 let partIndex = 0;
 for (let i = 0; i < value.length; i += step) {
 addLog(`Sending block ${partIndex+1}. Block size: ${step/2 + 4}byte. Starting position: ${i/2}`);
 await sendCommand(hexToBytes("03" + code + intToHex(i / 2, 2) + value.substring(i, i + step)));
-await delay(8);
+await delay(3);
 partIndex += 1;
 }
 }
@@ -216,7 +216,7 @@ await sendCommand(hexToBytes("0000"));
 // The clear also renegotiates the connection interval on the tag. Streaming
 // into that window loses the first blocks of the frame, which shows up as a
 // black strip (usually on the right, where the frame data starts).
-await delay(300);
+await delay(150);
 
 await sendCommand(hexToBytes("020000"));
 
