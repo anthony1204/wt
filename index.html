@@ -300,6 +300,39 @@ addLog('> Found serial port service');
 
 rxtxCharacteristic = await rxtxService.getCharacteristic('00001f1f-0000-1000-8000-00805f9b34fb');
 addLog('> Serial port service has been linked');
+
+// The tag reports its battery here (the standard 0x2A19 battery service is
+// blocked for Web Bluetooth).
+try {
+await rxtxCharacteristic.startNotifications();
+rxtxCharacteristic.addEventListener('characteristicvaluechanged', (event) => {
+const v = event.target.value;
+const b = new Uint8Array(v.buffer, v.byteOffset, v.byteLength);
+if (b.length >= 2 && b[0] === 0xE4) {
+const mv = b.length >= 3 ? b[2] * 10 : 0;
+setBattery(b[1], mv);
+}
+});
+addLog('> Battery reporting enabled');
+readBattery();
+} catch (e) {
+addLog('> Serial port has no notifications: ' + e);
+}
+}
+
+function setBattery(level, mv) {
+const el = document.getElementById('battery');
+if (!el) return;
+const mvTxt = mv ? ` (${mv} mV)` : '';
+let shade = 'green';
+if (level < 20) shade = '#c00';
+else if (level < 50) shade = '#b80';
+el.innerHTML = `Battery: <b style="color:${shade}">${level}%</b>${mvTxt}`;
+addLog(`> Battery: ${level}%${mvTxt}`);
+}
+
+async function readBattery() {
+await rxTxSendCommand(hexToBytes('e4'));
 }
 
 async function reConnect() {
@@ -605,6 +638,8 @@ is_allow_drawing = false;
 <button id="connectbutton" type="button" onclick="preConnect();">Link</button>
 <button type="button" onclick="reConnect();">Reconnect</button>
 <button type="button" onclick="document.getElementById('log').innerHTML = '';">Clear log</button>
+<button type="button" onclick="readBattery();">Read battery</button>
+<span id="battery" style="margin-left:8px">Battery: --</span>
 <br><br>
 
 <h3>Command control</h3>
