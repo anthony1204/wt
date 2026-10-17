@@ -206,7 +206,9 @@ bleDevice.gatt.disconnect();
 }
 else {
 reconnectTrys = 0;
-bleDevice = await navigator.bluetooth.requestDevice({ optionalServices: ['0000221f-0000-1000-8000-00805f9b34fb', '00001f10-0000-1000-8000-00805f9b34fb', '13187b10-eba9-a3ba-044e-83d3217d9a38'], acceptAllDevices: true });
+const optionalServices = ['0000221f-0000-1000-8000-00805f9b34fb', '00001f10-0000-1000-8000-00805f9b34fb', '13187b10-eba9-a3ba-044e-83d3217d9a38'];
+const tagId = new URLSearchParams(location.search).get('id');
+bleDevice = await navigator.bluetooth.requestDevice({ optionalServices, filters: [{ namePrefix: tagId || 'ESL_' }] });
 await bleDevice.addEventListener('gattserverdisconnected', disconnect);
 try {
 await connect();
