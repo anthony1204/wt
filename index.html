@@ -308,10 +308,10 @@ await rxtxCharacteristic.startNotifications();
 rxtxCharacteristic.addEventListener('characteristicvaluechanged', (event) => {
 const v = event.target.value;
 const b = new Uint8Array(v.buffer, v.byteOffset, v.byteLength);
-if (b.length >= 2 && b[0] === 0xE4) {
-const mv = b.length >= 3 ? b[2] * 10 : 0;
-setBattery(b[1], mv);
-}
+        if (b.length >= 2 && b[0] === 0xE4) {
+          const mv = b.length >= 4 ? (b[2] | (b[3] << 8)) : 0;
+          setBattery(b[1], mv);
+        }
 });
 addLog('> Battery reporting enabled');
 readBattery();
