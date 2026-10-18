@@ -2,7 +2,7 @@
 <meta charset="utf-8">
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hanshow controller 3000 (v11)</title>
+<title>Hanshow controller 3000 (v12)</title>
 <style>
 * {
 padding: 0;
@@ -59,6 +59,12 @@ padding: 12px;
 button,a {
 padding: 9px 12px;
 }
+#edit-font {
+max-width: 90vw !important;
+}
+}
+/* Log: full width and tall on every screen size. The element also carries inline
+   styles (position:absolute; height:5%), so !important is required to override. */
 #log-box {
 position: static !important;
 width: 100% !important;
@@ -66,13 +72,9 @@ height: auto !important;
 margin-top: 16px;
 }
 #log {
- height: 40vh !important;
- min-height: 220px !important;
- padding: 10px !important;
-}
-#edit-font {
-max-width: 90vw !important;
-}
+height: 45vh !important;
+min-height: 220px !important;
+padding: 10px !important;
 }
 </style>
 <script type="application/javascript" src="js/dithering.js"></script>
