@@ -2,7 +2,7 @@
 <meta charset="utf-8">
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hanshow controller 3000 (v12)</title>
+<title>Hanshow controller 3000 (v13)</title>
 <style>
 * {
 padding: 0;
@@ -311,6 +311,7 @@ await rxtxCharacteristic.startNotifications();
 rxtxCharacteristic.addEventListener('characteristicvaluechanged', (event) => {
 const v = event.target.value;
 const b = new Uint8Array(v.buffer, v.byteOffset, v.byteLength);
+        addLog(`> rx ${b.length}B: ${bytesToHex(b)}`);
         if (b.length >= 2 && b[0] === 0xE4) {
           const mv = b.length >= 4 ? (b[2] | (b[3] << 8)) : 0;
           setBattery(b[1], mv);
