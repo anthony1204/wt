@@ -2,7 +2,7 @@
 <meta charset="utf-8">
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hanshow controller 3000 (v13)</title>
+<title>Hanshow controller 3000 (v14)</title>
 <style>
 * {
 padding: 0;
@@ -97,7 +97,25 @@ resolve(2);
 });
 }
 
+// The awake-time diagnostic (e5) is sent repeatedly until the tag answers, so a
+// dropped write (e.g. one racing the battery read) does not hide the result.
+let diagPollTimer = null;
+function stopDiagPoll() {
+if (diagPollTimer) { clearInterval(diagPollTimer); diagPollTimer = null; }
+}
+function startDiagPoll() {
+stopDiagPoll();
+let tries = 0;
+const poke = () => {
+if (!rxtxCharacteristic || tries++ >= 6) { stopDiagPoll(); return; }
+rxTxSendCommand(hexToBytes('e5')).catch(() => {});
+};
+poke();
+diagPollTimer = setInterval(poke, 2000);
+}
+
 function resetVariables() {
+stopDiagPoll();
 gattServer = null;
 epdService = null;
 epdCharacteristic = null;
@@ -316,6 +334,7 @@ const b = new Uint8Array(v.buffer, v.byteOffset, v.byteLength);
           const mv = b.length >= 4 ? (b[2] | (b[3] << 8)) : 0;
           setBattery(b[1], mv);
         } else if (b.length >= 5 && b[0] === 0xE5) {
+          stopDiagPoll();
           const s = (b[1] | (b[2] << 8) | (b[3] << 16) | (b[4] << 24)) >>> 0;
           const el = document.getElementById('battery');
           if (el) el.dataset.awake = s;
@@ -324,7 +343,7 @@ const b = new Uint8Array(v.buffer, v.byteOffset, v.byteLength);
 });
 addLog('> Battery reporting enabled');
 readBattery();
-try { await rxTxSendCommand(hexToBytes('e5')); } catch (e) {}
+startDiagPoll();
 } catch (e) {
 addLog('> Serial port has no notifications: ' + e);
 }
